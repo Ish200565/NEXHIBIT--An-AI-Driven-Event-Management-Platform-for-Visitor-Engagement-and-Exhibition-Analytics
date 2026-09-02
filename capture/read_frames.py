@@ -1,6 +1,7 @@
+
 import cv2
 
-video_path = "test_video.mp4"
+video_path = "ish_test.mp4"
 cap = cv2.VideoCapture(video_path)
 
 frame_count = 0
