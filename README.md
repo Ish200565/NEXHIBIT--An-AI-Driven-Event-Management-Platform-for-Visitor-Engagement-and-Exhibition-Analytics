@@ -68,7 +68,7 @@ Test videos were recorded as one continuous multi-person clip and split using
 In production, each check-in produces its own single-visitor video directly.
 
 
-                                        ## Environment Setup
+## Environment Setup
 
 ### 0. Install Anaconda (or Miniconda) — prerequisite
 If `conda` isn't recognized in your terminal, install it first:
