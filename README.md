@@ -85,13 +85,36 @@ Verify it worked:
 conda --version
 ```
 
+### If `conda --version` is not recognized
+
+This means Anaconda is installed, but this terminal doesn't have conda on its 
+PATH. Two ways to fix it:
+
+**Quick fix — use Anaconda Prompt instead:**
+Search Start menu for "Anaconda Prompt" and use that terminal instead of 
+regular PowerShell/CMD. It already has conda configured — no setup needed.
+
+**Permanent fix — register conda into PowerShell:**
+Open Anaconda Prompt once and run:
+```bash
+conda init powershell
+```
+Close and reopen your terminal (or VS Code's integrated terminal). 
+`conda activate` will now work everywhere going forward.
+
+If PowerShell blocks the script on reopen (execution policy error), run this 
+once in PowerShell **as Administrator**, then retry:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
 ### 1. Create and activate a conda environment
 ```bash
 conda create -n torchreid python=3.10
 conda activate torchreid
 ```
 
-### 2. Install core dependencies
+### 2. Install core dependencies / requirements.txt
 ```bash
 pip install numpy
 pip install torch torchvision
