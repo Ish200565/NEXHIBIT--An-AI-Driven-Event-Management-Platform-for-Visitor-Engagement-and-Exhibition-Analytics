@@ -4,4 +4,4 @@ __pycache__/
 .cache/
 crops_best/
 crops/
-
+storage/visitor_embeddings.json
