@@ -5,3 +5,5 @@ __pycache__/
 crops_best/
 crops/
 storage/visitor_embeddings.json
+.vscode/
+*.mp4
