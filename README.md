@@ -112,10 +112,10 @@ Visitor ID with high confidence — validating the full pipeline end-to-end
 
 ## Matching Threshold (empirical, Week 2–3 test)
 - Same-person similarity observed: ~0.96 (two frames, same person)
-- Different-person similarity observed: ~0.63–0.72 (three distinct people)
-- Working threshold: **0.80** (to be tuned further with a larger test set)
-- Confirmed end-to-end: a held-out crop of a known visitor matched correctly 
-  at 0.878 confidence
+- Different-person similarity observed: ~0.39–0.72 (four distinct people tested)
+- Working threshold: 0.80
+- Confirmed: known visitor correctly matched at 0.878 confidence
+- Confirmed: unregistered visitor correctly rejected (best score 0.5327, below threshold, returns None)
 
 ## Testing Note
 Test videos were recorded as one continuous multi-person clip and split using 
