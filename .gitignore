@@ -4,4 +4,5 @@ __pycache__/
 .cache/
 crops_best/
 crops/
-
+runs/
+*.pth
