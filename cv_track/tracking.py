@@ -1,9 +1,8 @@
 from ultralytics import YOLO
 
 
-MODEL_PATH = "yolov8n.pt"
-VIDEO_PATH = "videos/exhibition1.mp4"
-OUTPUT_PATH = "tracking"
+MODEL_PATH = "yolov8s.pt"
+VIDEO_PATH = "videos/exhibition3.mp4"
 
 
 def track_people():
@@ -11,10 +10,11 @@ def track_people():
 
     results = model.track(
         source=VIDEO_PATH,
-        classes=[0],                 # 0 = person
-        tracker="bytetrack.yaml",
+        classes=[0],
+        tracker="trackers/my_bytetrack.yaml",
         persist=True,
-        conf=0.5,
+        conf=0.3,
+        iou=0.5,
         save=True,
         project="runs",
         name="tracking",
