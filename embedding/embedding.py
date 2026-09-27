@@ -1,7 +1,13 @@
 #This code is only used for a single video containing multiple persons if there are separate videos then use the commented code after this code 
+
+
 import torchreid
 import torch
 import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from storage.store import save_embedding
 
 extractor = torchreid.utils.FeatureExtractor(
     model_name='osnet_x1_0',
@@ -15,30 +21,26 @@ def get_embedding(crop_dir):
     return torch.nn.functional.normalize(avg, p=2, dim=0)
 
 if __name__ == "__main__":
-    people = ["crops_best/person1", "crops_best/person2", "crops_best/person3"]
-    embeddings = {p: get_embedding(p) for p in people}
+    # Maps each test person's crop folder to a real Visitor ID
+    people = {
+    "V1001": "../capture/crops_best/person1",
+    "V1002": "../capture/crops_best/person2",
+    "V1003": "../capture/crops_best/person3",
+}
 
-    for p, emb in embeddings.items():
-        print(f"{p}: shape={emb.shape}, norm={emb.norm():.4f}")
+    embeddings = {}
+    for visitor_id, crop_dir in people.items():
+        emb = get_embedding(crop_dir)
+        embeddings[visitor_id] = emb
+        save_embedding(visitor_id, emb)   # <-- actually persists it now
+        print(f"{visitor_id}: shape={emb.shape}, norm={emb.norm():.4f}")
 
+    # Pairwise similarity check, same as Day 5
     keys = list(embeddings.keys())
     for i in range(len(keys)):
         for j in range(i + 1, len(keys)):
             sim = torch.dot(embeddings[keys[i]], embeddings[keys[j]])
             print(f"Similarity {keys[i]} vs {keys[j]}: {sim.item():.4f}")
-
-# quick same-person sanity check
-img_paths = [os.path.join("crops_best/person1", f) for f in os.listdir("crops_best/person1")]
-feats = extractor(img_paths)  # 5 individual embeddings, not averaged
-feats = torch.nn.functional.normalize(feats, p=2, dim=1)
-
-sim = torch.dot(feats[0], feats[1])
-print(f"Same-person (2 different frames): {sim.item():.4f}")
-
-
-
-
-
 
 
 

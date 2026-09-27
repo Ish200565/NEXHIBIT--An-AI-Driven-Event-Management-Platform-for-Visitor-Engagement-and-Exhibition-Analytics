@@ -6,3 +6,6 @@ crops_best/
 crops/
 runs/
 *.pth
+storage/visitor_embeddings.json
+.vscode/
+*.mp4
