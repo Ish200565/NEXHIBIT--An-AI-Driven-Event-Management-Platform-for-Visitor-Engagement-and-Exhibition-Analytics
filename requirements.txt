@@ -2,3 +2,12 @@ torch
 torchvision
 opencv-python
 numpy
+ultralytics
+torchreid
+scipy
+yacs
+gdown
+Pillow
+h5py
+matplotlib
+tensorboard
