@@ -9,3 +9,4 @@ runs/
 storage/visitor_embeddings.json
 .vscode/
 *.mp4
+   cv_track/models/

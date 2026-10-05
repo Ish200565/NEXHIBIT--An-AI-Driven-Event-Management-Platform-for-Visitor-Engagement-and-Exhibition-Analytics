@@ -59,7 +59,7 @@ query_embedding = reid.get_embedding(person1)
 match, score = find_best_match(
     query_embedding,
     reference_embeddings,
-    threshold=0.80
+    threshold=0.60
 )
 
 

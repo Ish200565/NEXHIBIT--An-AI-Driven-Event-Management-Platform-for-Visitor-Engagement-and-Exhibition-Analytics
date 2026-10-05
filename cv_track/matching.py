@@ -9,7 +9,7 @@ def cosine_similarity(embedding1, embedding2):
     return torch.dot(embedding1, embedding2).item()
 
 
-def find_best_match(query_embedding, reference_embeddings, threshold=0.80):
+def find_best_match(query_embedding, reference_embeddings, threshold=0.60):
     """
     Find the closest reference person.
 
