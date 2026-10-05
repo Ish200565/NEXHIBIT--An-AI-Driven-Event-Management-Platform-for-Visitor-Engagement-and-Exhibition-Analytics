@@ -6,11 +6,17 @@ import torch
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(
+    SCRIPT_DIR, "..", "cv_track", "models", "osnet_x1_0_msmt17.pth"
+)
+
+sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from storage.store import save_embedding
 
 extractor = torchreid.utils.FeatureExtractor(
     model_name='osnet_x1_0',
+    model_path=MODEL_PATH,
     device='cpu'
 )
 
@@ -23,9 +29,9 @@ def get_embedding(crop_dir):
 if __name__ == "__main__":
     # Maps each test person's crop folder to a real Visitor ID
     people = {
-    "V1001": "../capture/crops_best/person1",
-    "V1002": "../capture/crops_best/person2",
-    "V1003": "../capture/crops_best/person3",
+    "V1001": os.path.join(SCRIPT_DIR, "..", "capture", "crops_best", "person1"),
+    "V1002": os.path.join(SCRIPT_DIR, "..", "capture", "crops_best", "person2"),
+    "V1003": os.path.join(SCRIPT_DIR, "..", "capture", "crops_best", "person3"),
 }
 
     embeddings = {}
@@ -53,6 +59,7 @@ if __name__ == "__main__":
 
 # extractor = torchreid.utils.FeatureExtractor(
 #     model_name='osnet_x1_0',
+#     model_path=MODEL_PATH,
 #     device='cpu'
 # )
 

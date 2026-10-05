@@ -1,5 +1,10 @@
+import os
+
 import torch
 import torchreid
+
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class ReIDExtractor:
@@ -8,7 +13,7 @@ class ReIDExtractor:
 
         self.extractor = torchreid.utils.FeatureExtractor(
     model_name="osnet_x1_0",
-    model_path="models/osnet_x1_0_msmt17.pth",
+    model_path=os.path.join(SCRIPT_DIR, "models", "osnet_x1_0_msmt17.pth"),
     device=device
 )
 

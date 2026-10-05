@@ -2,6 +2,8 @@ import os
 import tempfile
 import torch
 
+# from cv_track import reid        # duplicate/unused import — removed, ReIDExtractor is imported directly below
+# from cv_track import reid        # duplicate line (was repeated twice in original)
 from ultralytics import YOLO
 
 from reid import ReIDExtractor
@@ -17,20 +19,20 @@ MODEL_PATH = "yolov8s.pt"
 VIDEO_PATH = "videos/exhibition3.mp4"
 TRACKER_PATH = "trackers/my_bytetrack.yaml"
 
-REFERENCE_DIR = "capture/crops_best"
+# REFERENCE_DIR = "capture/crops_best"
 
-# Names corresponding to the reference folders
-PERSON_NAMES = {
-    "person1": "Ishika",
-    "person2": "Trusha",
-    "person3": "Yug",
-}
+# # Names corresponding to the reference folders
+# PERSON_NAMES = {
+#     "person1": "Ishika",
+#     "person2": "Trusha",
+#     "person3": "Yug",
+# }
 
 CONFIDENCE = 0.3
 IOU = 0.5
 
 # We are focusing on identifying the 3 known visitors for now.
-THRESHOLD = 0.40
+THRESHOLD = 0.60  # PROVISIONAL — shared value, pending live-footage calibration test
 
 MAX_CROPS = 5
 
@@ -39,25 +41,36 @@ MAX_CROPS = 5
 # BUILD REFERENCE EMBEDDINGS
 # ============================================================
 
+# def build_reference_embeddings(reid):
+#     reference_embeddings = {}
+
+#     for person_id in PERSON_NAMES:
+#         folder = os.path.join(REFERENCE_DIR, person_id)
+
+#         images = [
+#             os.path.join(folder, f)
+#             for f in os.listdir(folder)
+#             if f.lower().endswith((".jpg", ".jpeg", ".png"))
+#         ]
+
+#         if not images:
+#             print(f"[WARNING] No reference images found for {person_id}")
+#             continue
+
+#         reference_embeddings[person_id] = reid.get_embedding(images)
+
+#     return reference_embeddings
+
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from storage.store import load_all
+
 def build_reference_embeddings(reid):
-    reference_embeddings = {}
-
-    for person_id in PERSON_NAMES:
-        folder = os.path.join(REFERENCE_DIR, person_id)
-
-        images = [
-            os.path.join(folder, f)
-            for f in os.listdir(folder)
-            if f.lower().endswith((".jpg", ".jpeg", ".png"))
-        ]
-
-        if not images:
-            print(f"[WARNING] No reference images found for {person_id}")
-            continue
-
-        reference_embeddings[person_id] = reid.get_embedding(images)
-
-    return reference_embeddings
+    stored = load_all()
+    if not stored:
+        print("[WARNING] No visitors found in visitor_embeddings.json")
+        return {}
+    return {visitor_id: torch.tensor(emb) for visitor_id, emb in stored.items()}
 
 
 # ============================================================
@@ -242,6 +255,18 @@ def main():
                         "score": score
                     }
 
+        print("\n[DEBUG] All track match results:")
+        for track_id, image_paths in track_paths.items():
+            if len(image_paths) == 0:
+                continue
+            query_embedding = reid.get_embedding(image_paths)
+            person_id, score = find_best_match(
+                query_embedding,
+                reference_embeddings,
+                threshold=THRESHOLD
+            )
+            print(f"  Track {track_id}: matched={person_id}, score={score:.4f}")
+
     # ========================================================
     # FINAL RESULT
     # ========================================================
@@ -252,21 +277,37 @@ def main():
     print("=" * 50)
     print()
 
-    for person_id, name in PERSON_NAMES.items():
+    # for person_id, name in PERSON_NAMES.items():
+    #
+    #     if person_id in detected_people:
+    #
+    #         track_id = detected_people[person_id]["track_id"]
+    #         score = detected_people[person_id]["score"]
+    #
+    #         print(f"[✓] {name} PRESENT")
+    #         print(f"    Track ID : {track_id}")
+    #         print(f"    Similarity: {score:.4f}")
+    #         print()
+    #
+    #     else:
+    #
+    #         print(f"[ ] {name} NOT DETECTED")
+    #         print()
 
-        if person_id in detected_people:
-
-            track_id = detected_people[person_id]["track_id"]
-            score = detected_people[person_id]["score"]
-
-            print(f"[✓] {name} PRESENT")
+    # NEW — no PERSON_NAMES needed, reuse reference_embeddings already
+    # built earlier in this function (removed the redundant second call
+    # that was here before — rebuilding it again wasted a full model pass
+    # and produced duplicate [INFO] logging)
+    for visitor_id in reference_embeddings:
+        if visitor_id in detected_people:
+            track_id = detected_people[visitor_id]["track_id"]
+            score = detected_people[visitor_id]["score"]
+            print(f"[✓] {visitor_id} PRESENT")
             print(f"    Track ID : {track_id}")
             print(f"    Similarity: {score:.4f}")
             print()
-
         else:
-
-            print(f"[ ] {name} NOT DETECTED")
+            print(f"[ ] {visitor_id} NOT DETECTED")
             print()
 
     print("-" * 50)
@@ -275,7 +316,7 @@ def main():
 
     print(
         f"Known Visitors Detected: "
-        f"{present_count}/{len(PERSON_NAMES)}"
+        f"{present_count}/{len(reference_embeddings)}"
     )
 
     print("-" * 50)

@@ -35,7 +35,7 @@ NEXHIBIT/
 
 ---
 
-## Pipeline Overview
+## Pipeline Overview (Check-in / Identity Side — Ishika)
 
 ### 1. `capture/read_frames.py`
 Reads a video file frame-by-frame using OpenCV and confirms frame count and 
@@ -44,84 +44,272 @@ running it through the rest of the pipeline.
 
 ### 2. `capture/testing_utils/split_by_person.py` (testing utility, not production)
 Splits one continuous multi-person test recording into separate per-person 
-clips (`person1.mp4`, `person2.mp4`, ...) using manually identified timestamps. 
-This exists only because test footage was recorded as one clip with multiple 
-people for convenience. In production, each check-in produces its own 
-single-visitor video directly, so this script is not part of the live pipeline.
+clips using manually identified timestamps. Exists only because test footage 
+was recorded as one clip with multiple people for convenience. In production, 
+each check-in produces its own single-visitor video directly.
 
 ### 3. `capture/crop_frames.py`
 Takes a single-person video and extracts every frame, then applies a fixed 
 center-crop (assumes a kiosk camera with the visitor standing centered) to 
-isolate the person from surrounding background. Outputs one cropped image 
-per frame into a `crops/<person>` folder.
-
-Automatic person detection (OpenCV HOG) was evaluated and dropped — HOG was 
-removed from OpenCV 5.0's Python bindings, and a static center-crop is a 
-reasonable substitute for a fixed, controlled kiosk camera position anyway.
+isolate the person from surrounding background. Automatic person detection 
+(OpenCV HOG) was evaluated and dropped — HOG was removed from OpenCV 5.0's 
+Python bindings, and a static center-crop is a reasonable substitute for a 
+fixed, controlled kiosk camera position.
 
 ### 4. `capture/filter_sharp.py`
-Scores every cropped frame using Laplacian variance (a standard blur-detection 
-metric — higher variance means a sharper image) and keeps only the top 5 
-sharpest crops per person. Reduces ~300 raw frames down to a handful of 
-clean images worth feeding into the embedding model.
+Scores every cropped frame using Laplacian variance and keeps only the top 5 
+sharpest crops per person, reducing ~300 raw frames to a handful of clean 
+images worth embedding.
 
 ### 5. `embedding/embedding.py`
-Loads a pretrained OSNet (`osnet_x1_0`, via torchreid) and extracts a 512-dim 
-feature embedding from each of the top 5 sharpest crops. These 5 embeddings 
-are averaged and L2-normalized into a single stored embedding representing 
-that visitor, tagged with a real Visitor ID (e.g. `V1001`). Also computes 
-pairwise cosine similarity between different people's embeddings, and between 
-multiple frames of the same person, to validate that the model actually 
-distinguishes between individuals. Calls `storage/store.py` to persist each 
-visitor's embedding.
-
-### `embedding/testing_utils/test_extract.py` (diagnostic utility, not production)
-Minimal script that loads OSNet and runs it on a single test image — no crops 
-folder, no storage, no dependencies on the rest of the pipeline. Kept as a 
-fast way to check whether an issue is with OSNet/torchreid itself versus the 
-project's own pipeline logic.
+Loads OSNet via torchreid and extracts a 512-dim feature embedding from each 
+of the top 5 sharpest crops, averages and L2-normalizes them into one stored 
+embedding per visitor, tagged with a real Visitor ID (e.g. `V1001`). Calls 
+`storage/store.py` to persist each visitor's embedding.
 
 ### 6. `storage/store.py`
 Persistent key-value storage for visitor embeddings, backed by a local JSON 
 file (`visitor_embeddings.json`). Provides `save_embedding()`, 
 `load_embedding()`, and `load_all()`. Path is anchored to the script's own 
-location (not the current working directory), so it resolves consistently 
-regardless of which folder a script is run from.
+location so it resolves consistently regardless of which folder a script is 
+run from.
 
 ### 7. `matching/match.py`
-Given a new query embedding (simulating a camera crop), compares it against 
-every stored visitor embedding using cosine similarity and returns the 
-closest match. Returns no match if the best score falls below the confidence 
-threshold, rather than force-assigning to the nearest (but likely wrong) 
-stored identity.
+Compares a new query embedding against every stored visitor embedding using 
+cosine similarity and returns the closest match, or no match if the best 
+score falls below the confidence threshold.
 
-### `matching/test_match.py`
-Test script that re-extracts an embedding from an existing crop, runs it 
-through `match.py`, and confirms it correctly matches back to its own 
-Visitor ID with high confidence — validating the full pipeline end-to-end 
-(capture → embedding → storage → matching).
+---
+
+## Pipeline Overview (Live Tracking Side — Rohit)
+
+### `cv_track/tracking.py` + YOLOv8 + ByteTrack
+Detects people in exhibition video frame-by-frame (YOLOv8) and assigns 
+persistent track IDs across frames (ByteTrack), configured via 
+`trackers/my_bytetrack.yaml`.
+
+### `cv_track/cropping.py`
+Expands detected bounding boxes, filters out poor-quality crops, scores 
+sharpness, and keeps the best 5 crops per track ID.
+
+### `cv_track/reid.py`
+Loads OSNet and generates an averaged, normalized embedding from a track's 
+best crops — the live-camera equivalent of `embedding/embedding.py`.
+
+### `cv_track/matching.py`
+Compares a live track's embedding against known reference embeddings using 
+cosine similarity; returns `"UNKNOWN"` if the best score is below threshold.
+
+### `cv_track/run_reid.py`
+The integrated workflow: runs YOLO+ByteTrack on exhibition footage, collects 
+best crops per track, re-identifies each track against known visitors, and 
+prints a final presence summary.
+
+---
+
+## Why MSMT17 Instead of the Default ImageNet Checkpoint
+
+OSNet via torchreid defaults to ImageNet-pretrained weights if no checkpoint 
+path is given — these are trained for general object classification, not 
+specifically for telling people apart. Early testing used these default 
+weights (shown in Week 2 results below) and worked, but was more sensitive 
+to shared background and lighting between crops than ideal.
+
+`osnet_x1_0_msmt17.pth` is OSNet **finetuned specifically on the MSMT17 
+person re-identification benchmark** — trained explicitly to distinguish 
+people by appearance, not general objects. Switching to this checkpoint was 
+driven by the integration process itself (see below), and produced a 
+measurably wider, cleaner gap between same-person and different-person 
+similarity scores once adopted project-wide.
+
+---
+
+## Integration Process: My Pipeline + Rohit's Pipeline
+
+### The problem before integration
+Two separate, independently-working systems existed:
+- My check-in pipeline: register → crop → embed → store in 
+  `visitor_embeddings.json`
+- Rohit's live tracking pipeline: detect → track → crop → re-identify, but 
+  rebuilding reference embeddings directly from image folders every run, 
+  never reading my stored JSON database
+
+The two systems never actually exchanged data — Rohit's live matching had no 
+access to real registered visitors, only folder-based test images.
+
+### Step 1 — Wire `cv_track/run_reid.py` to shared storage
+Replaced Rohit's folder-based `build_reference_embeddings()` function (which 
+rebuilt embeddings from `capture/crops_best/<person>/` every run) with a call 
+into my `storage/store.py`:
+```python
+from storage.store import load_all
+
+def build_reference_embeddings(reid):
+    stored = load_all()
+    return {visitor_id: torch.tensor(emb) for visitor_id, emb in stored.items()}
+```
+This made real registered Visitor IDs (V1001, V1002, V1003) the actual 
+reference set for live matching, instead of rebuilt folder data.
+
+### Step 2 — Fixed a structural bug found during integration
+`run_reid.py`'s final summary block had lost its indentation and was sitting 
+**outside** the `main()` function entirely — it referenced a now-removed 
+`PERSON_NAMES` variable and would have crashed or behaved unpredictably. 
+Reindented it correctly inside `main()`, removed a duplicate/redundant 
+reference-embedding rebuild that was happening a second time right before 
+the summary print, and removed duplicate unused imports.
+
+### Step 3 — Resolved a threshold mismatch
+My matcher used `threshold=0.80` (tuned on clean, centered kiosk crops). 
+Rohit's `run_reid.py` used `THRESHOLD = 0.40` (tuned/guessed for noisier live 
+tracking crops — motion blur, angle, distance). These were two different 
+numbers for the same underlying comparison, discovered during the audit. 
+Agreed on a shared **provisional threshold of 0.60** as a starting point, 
+pending empirical calibration on real tracking footage, and applied it 
+consistently across `cv_track/matching.py`'s default and `run_reid.py`'s 
+`THRESHOLD` constant.
+
+### Step 4 — Found and fixed a silent embedding-format mismatch
+Before trusting any cross-pipeline similarity score, ran a direct 
+compatibility check: the exact same image through both my `embedding.py` and 
+Rohit's `reid.py`.
+
+- **First attempt:** `reid.py` couldn't find `models/osnet_x1_0_msmt17.pth` 
+  (a relative path that only resolved from inside `cv_track/`), silently fell 
+  back to ImageNet weights. Cross-check similarity: **1.0000** — looked 
+  perfect, but only because both sides had silently fallen back to the same 
+  (wrong) default.
+- **After placing the MSMT17 checkpoint correctly:** cross-check similarity 
+  dropped to **0.4535** — revealing that ImageNet-embedding (mine) and 
+  MSMT17-embedding (Rohit's) vectors are **not comparable** — different 
+  training objectives place "closeness" differently in the 512-dim space.
+- **Fix:** standardized the entire project on MSMT17. Updated 
+  `embedding/embedding.py` to load the MSMT17 checkpoint (anchored to an 
+  absolute path, not a relative one — same fix pattern applied earlier to 
+  `store.py`). Deleted and regenerated `visitor_embeddings.json` from 
+  scratch so all stored visitor embeddings use the same checkpoint as the 
+  live tracking side.
+- **Re-ran the compatibility check:** similarity returned to **1.0000** — 
+  confirmed both pipelines now produce identical embeddings for identical 
+  input.
+
+### Roles in the integration
+- **Ishika:** built and owns the check-in/storage/matching pipeline, 
+  diagnosed and fixed all path-resolution bugs (storage, embedding, matching, 
+  and later `reid.py`'s model path), ran the cross-pipeline compatibility 
+  test, identified and resolved the checkpoint mismatch, regenerated all 
+  stored visitor data under MSMT17, ran and validated the final end-to-end 
+  and unknown-rejection tests.
+- **Rohit:** built and owns detection/tracking (YOLOv8 + ByteTrack), 
+  cropping, live Re-ID extraction, and the `run_reid.py` orchestration 
+  script; supplied the MSMT17 checkpoint and exhibition test footage 
+  (`exhibition3.mp4`).
+
+---
+
+## Threshold Evolution: 0.80 → 0.60
+
+| Stage | Threshold | Basis |
+|---|---|---|
+| Original (check-in pipeline, ImageNet) | 0.80 | Tuned on clean kiosk crops |
+| Rohit's original (live tracking) | 0.40 | Informal, untested guess for noisier live crops |
+| Agreed provisional value | 0.60 | Midpoint, pending real calibration data |
+| **Final, validated on live footage (MSMT17)** | **0.60** | Confirmed via real exhibition footage — see results below |
+
+The 0.60 threshold was not re-guessed after the MSMT17 switch — it was 
+**empirically tested** against real tracking output and held up with a clean 
+margin (see Final Results).
 
 ---
 
 ## Embedding Specification
 - Model: `osnet_x1_0` (torchreid)
+- Checkpoint: `osnet_x1_0_msmt17.pth` (MSMT17 — finetuned for person re-ID, 
+  not the default ImageNet weights)
 - Output dimension: 512
 - Normalization: L2-normalized (confirmed via `embedding.norm()` ≈ 1.0)
 - Input size expected: (256, 128)
 - Distance metric for matching: cosine similarity
+- Checkpoint is shared manually between team members (not committed to Git — 
+  same reasoning as other large binary model files)
 
-## Matching Threshold (empirical, Week 2–3 test)
-- Same-person similarity observed: ~0.96 (two frames, same person)
-- Different-person similarity observed: ~0.39–0.72 (four distinct people tested)
-- Working threshold: 0.80
-- Confirmed: known visitor correctly matched at 0.878 confidence
-- Confirmed: unregistered visitor correctly rejected (best score 0.5327, below threshold, returns None)
+## Matching Threshold — Validation History
+
+### Phase 1 — ImageNet checkpoint, check-in pipeline only
+- Same-person similarity: ~0.96
+- Different-person similarity: ~0.39–0.72 (across 4 test people)
+- Threshold used: 0.80
+
+### Phase 2 — Cross-pipeline compatibility check
+- Same image, ImageNet weights (both sides, accidental fallback): 
+  similarity 1.0000 (misleading — both sides wrong in the same way)
+- Same image, MSMT17 vs ImageNet (true mismatch revealed): similarity 0.4535
+- Same image, MSMT17 vs MSMT17 (after fix): similarity 1.0000 (confirmed 
+  genuine compatibility)
+
+### Phase 3 — MSMT17 checkpoint, regenerated storage
+- Different-person similarity: 0.39–0.52 (V1001/V1002/V1003, regenerated)
+- Known-visitor match (single test crop): 0.8323
+
+### Phase 4 — Full live-tracking validation (final)
+Ran `cv_track/run_reid.py` on `exhibition3.mp4`, containing 3 registered 
+visitors plus 1 unregistered person. ByteTrack produced 10 track fragments 
+total (occlusion/re-entry causes a single person to split across multiple 
+track IDs).
+
+**Known visitors — 7 track fragments, all correctly matched:**
+| Visitor | Best Track | Similarity |
+|---|---|---|
+| V1001 | 1 | 0.8349 |
+| V1002 | 7 | 0.7673 |
+| V1003 | 2 | 0.8028 |
+
+(V1001 and V1002 also matched correctly on additional fragments: track 10 
+at 0.6754, track 15 at 0.6579, track 8 at 0.7651 — confirming consistency 
+across multiple crop sets of the same person.)
+
+**Unregistered person — 3 track fragments, all correctly rejected:**
+| Track | Similarity | Result |
+|---|---|---|
+| 3 | 0.5386 | UNKNOWN |
+| 6 | 0.5306 | UNKNOWN |
+| 18 | 0.5018 | UNKNOWN |
+
+**Result: clean separation.** Highest unknown-person score (0.5386) sits 
+~0.12 below the lowest known-visitor score (0.6579). The 0.60 threshold 
+sits cleanly in this gap — zero false positives, zero false negatives on 
+this test set.
+
+**Final summary output:**
+Known Visitors Detected: 3/3
+V1001 — Track 1 — Similarity 0.8349
+V1002 — Track 7 — Similarity 0.7673
+V1003 — Track 2 — Similarity 0.8028
+
+
+
+---
 
 ## Testing Note
-Test videos were recorded as one continuous multi-person clip and split using 
-`capture/testing_utils/split_by_person.py` to simulate individual check-in 
-captures. In production, each check-in produces its own single-visitor video 
-directly, so this script is not used in the live system.
+Test videos for the check-in pipeline were recorded as one continuous 
+multi-person clip and split using `capture/testing_utils/split_by_person.py` 
+to simulate individual check-in captures. `exhibition3.mp4` (used for the 
+live tracking validation) was recorded separately, containing the same 3 
+registered visitors plus 1 additional unregistered person, specifically to 
+test unknown-person rejection under realistic tracking conditions.
+
+---
+
+## Known Limitations
+- Similar clothing across different people may reduce the match-confidence 
+  gap (not yet stress-tested with deliberately similar outfits)
+- Appearance changes (jacket removed/added) may affect same-person matching 
+  across sessions
+- Track fragmentation (one person split across multiple ByteTrack IDs due 
+  to occlusion) is handled by keeping the best-scoring fragment per visitor, 
+  but is not itself resolved at the tracking level
+- BLE or another secondary identifier recommended as a fallback in low- 
+  confidence scenarios, per the original project design
 
 ---
 
@@ -179,6 +367,8 @@ managers.
 pip install numpy scipy
 pip install torch torchvision
 pip install opencv-python
+pip install ultralytics
+pip install yacs gdown
 ```
 
 **Note on OpenCV version:** This project uses the latest OpenCV (5.x), which 
@@ -222,9 +412,16 @@ cd path\to\deep-person-reid
 pip install -r requirements.txt
 ```
 
-### 5. First run
-The first time `embedding.py` runs, it auto-downloads OSNet's pretrained 
-ImageNet weights (~10MB) to a local cache — this only happens once.
+### 5. Get the MSMT17 checkpoint
+`osnet_x1_0_msmt17.pth` is required by both `embedding/embedding.py` and 
+`cv_track/reid.py`. This file is **not committed to Git** (large binary, 
+same handling as other model weights) — obtain it from a team member and 
+place it at:cv_track/models/osnet_x1_0_msmt17.pth
+
+Both pipelines reference this same file path. If the file is missing, 
+torchreid will silently fall back to ImageNet weights with a console 
+warning — **watch for this warning**, as it will produce embeddings 
+incompatible with the rest of the project without an obvious error.
 
 ### 6. Verify full setup
 ```bash
@@ -235,8 +432,8 @@ python -c "import cv2, torch; import sys; sys.path.append(r'path/to/deep-person-
 
 ## Running the Pipeline
 
+### Check-in / storage pipeline
 Run from the project root (`NEXHIBIT/`) for consistent path resolution:
-
 ```bash
 python capture/read_frames.py
 python capture/crop_frames.py
@@ -244,6 +441,14 @@ python capture/filter_sharp.py
 python embedding/embedding.py
 python matching/test_match.py
 ```
+Expected result: a test crop correctly matches its own stored Visitor ID 
+with confidence above the 0.80 threshold (check-in pipeline's own 
+validation, separate from live tracking).
 
-Expected result at the end: a test crop correctly matches its own stored 
-Visitor ID with confidence above the 0.80 threshold.
+### Live tracking integration
+```bash
+python cv_track/run_reid.py
+```
+Expected result: known registered visitors print as PRESENT with similarity 
+scores above 0.60; unregistered people are correctly excluded from the 
+summary.
