@@ -1,0 +1,345 @@
+/* Small fix for the placeholder pages: put the label on its own line. */
+.page-center .eyebrow {
+  display: block;
+}
+
+/* ============ Shared section pieces ============ */
+.section-head {
+  max-width: 680px;
+  margin: 0 auto 2.75rem;
+  text-align: center;
+}
+
+.section-alt {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(7, 12, 22, 0.45);
+}
+
+/* ============ Hero ============ */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 5rem 0 4.5rem;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 40% 60% at 18% 0%, rgba(201, 169, 106, 0.2), transparent 70%),
+    radial-gradient(ellipse 35% 55% at 82% 0%, rgba(110, 140, 205, 0.17), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.hero h1 span {
+  color: var(--gold-bright);
+}
+
+.hero-lead {
+  max-width: 54ch;
+  font-size: 1.15rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.hero-note {
+  margin-top: 1.25rem;
+  color: var(--silver-dim);
+  font-size: 0.85rem;
+}
+
+/* Illustrative floor plan */
+.plan-card {
+  padding: 1.5rem;
+}
+
+.plan-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--silver);
+  font-size: 0.85rem;
+}
+
+.plan-title strong {
+  color: var(--offwhite);
+  font-weight: 600;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.heat {
+  aspect-ratio: 1 / 0.8;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.heat-0 { background: rgba(184, 190, 200, 0.08); }
+.heat-1 { background: rgba(201, 169, 106, 0.22); }
+.heat-2 { background: rgba(201, 169, 106, 0.42); }
+.heat-3 { background: rgba(201, 169, 106, 0.68); }
+.heat-4 { background: rgba(224, 195, 134, 0.95); }
+
+.plan-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  color: var(--silver-dim);
+  font-size: 0.8rem;
+}
+
+.plan-legend .heat {
+  width: 18px;
+  aspect-ratio: 1;
+}
+
+.plan-caption {
+  margin: 0.75rem 0 0;
+  color: var(--silver-dim);
+  font-size: 0.8rem;
+}
+
+/* ============ About ============ */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.about-points {
+  display: grid;
+  gap: 1rem;
+}
+
+.about-points li {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.about-points strong {
+  display: block;
+  color: var(--offwhite);
+}
+
+.about-points span {
+  color: var(--silver);
+  font-size: 0.95rem;
+}
+
+.icon-box {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line-gold);
+  border-radius: 12px;
+  background: rgba(201, 169, 106, 0.08);
+  color: var(--gold);
+}
+
+/* ============ Features ============ */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.feature-grid .icon-box {
+  margin-bottom: 1rem;
+}
+
+.feature-grid p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* ============ Showcase ============ */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.showcase-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2.25rem;
+  text-align: center;
+}
+
+.showcase-footer p {
+  margin: 0;
+  color: var(--silver-dim);
+  font-size: 0.9rem;
+}
+
+/* ============ Analytics ============ */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.metric-list {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1.5rem;
+}
+
+.metric-list li {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.metric-list strong {
+  display: block;
+  color: var(--offwhite);
+}
+
+.metric-list span {
+  color: var(--silver);
+  font-size: 0.95rem;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 180px;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.bar {
+  flex: 1;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--gold-bright), rgba(201, 169, 106, 0.3));
+}
+
+.bar-labels {
+  display: flex;
+  gap: 8px;
+  margin-top: 0.5rem;
+  color: var(--silver-dim);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.bar-labels span {
+  flex: 1;
+}
+
+/* ============ How it works ============ */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  counter-reset: step;
+}
+
+.steps .card {
+  position: relative;
+  padding-top: 2.75rem;
+}
+
+.step-number {
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.steps p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* ============ Closing call to action ============ */
+.cta-band {
+  padding: 3rem 1.5rem;
+  border: 1px solid var(--line-gold);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(201, 169, 106, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.03);
+  text-align: center;
+}
+
+.cta-band p {
+  max-width: 52ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-band .hero-actions {
+  justify-content: center;
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 960px) {
+  .hero-grid,
+  .about-grid,
+  .analytics-grid {
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+  }
+
+  .feature-grid,
+  .event-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .hero {
+    padding: 3rem 0;
+  }
+
+  .section {
+    padding: 3rem 0;
+  }
+
+  .feature-grid,
+  .event-grid,
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+}

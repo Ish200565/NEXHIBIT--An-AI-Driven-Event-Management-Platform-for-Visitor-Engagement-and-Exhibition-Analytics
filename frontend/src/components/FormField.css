@@ -1,0 +1,66 @@
+.field {
+  display: grid;
+  align-content: start;
+  gap: 0.4rem;
+}
+
+.field label {
+  color: var(--offwhite);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.field .req {
+  color: var(--gold);
+}
+
+.field .opt {
+  color: var(--silver-dim);
+  font-weight: 400;
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--offwhite);
+  font: inherit;
+}
+
+.input::placeholder {
+  color: var(--silver-dim);
+}
+
+.input:hover {
+  border-color: var(--silver-dim);
+}
+
+.input:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  border-color: var(--gold);
+}
+
+.input[aria-invalid='true'] {
+  border-color: #f08a8a;
+}
+
+select.input option {
+  background: var(--navy-800);
+  color: var(--offwhite);
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--silver-dim);
+  font-size: 0.82rem;
+}
+
+.field-error {
+  margin: 0;
+  color: #ffb4b4;
+  font-size: 0.85rem;
+}

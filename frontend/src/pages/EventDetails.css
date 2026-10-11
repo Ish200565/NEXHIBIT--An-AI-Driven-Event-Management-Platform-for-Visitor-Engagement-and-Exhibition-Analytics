@@ -1,0 +1,134 @@
+.detail-page {
+  padding: 2.5rem 0 1rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  color: var(--silver);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--offwhite);
+  text-decoration: underline;
+}
+
+.detail-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.detail-hero .event-visual {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-gold);
+  border-radius: 20px;
+}
+
+.detail-hero h1 {
+  margin-bottom: 0.4rem;
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.detail-main {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.fact {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.fact .icon-box {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line-gold);
+  border-radius: 12px;
+  background: rgba(201, 169, 106, 0.08);
+  color: var(--gold);
+}
+
+.fact span {
+  display: block;
+  color: var(--silver-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fact strong {
+  color: var(--offwhite);
+  font-weight: 600;
+}
+
+.highlight-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.highlight-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--silver);
+}
+
+.highlight-list svg {
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+.side-card {
+  position: sticky;
+  top: 96px;
+}
+
+.side-card .btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.side-card p {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 860px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side-card {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .fact-grid {
+    grid-template-columns: 1fr;
+  }
+}
