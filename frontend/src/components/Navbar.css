@@ -1,0 +1,59 @@
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--silver);
+  font-size: 0.9rem;
+}
+
+.nav-user svg {
+  color: var(--gold);
+}
+
+.nav-tag {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--line-gold);
+  border-radius: 999px;
+  color: var(--gold-bright);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Laptop widths: tighten spacing so three buttons still fit on one line */
+@media (min-width: 961px) and (max-width: 1180px) {
+  .navbar-inner {
+    gap: 1rem;
+  }
+
+  .brand-name {
+    font-size: 1.15rem;
+    letter-spacing: 0.14em;
+  }
+
+  .nav-menu {
+    gap: 1rem;
+  }
+
+  .nav-links {
+    gap: 0.9rem;
+  }
+
+  .nav-link {
+    font-size: 0.9rem;
+  }
+
+  .nav-actions {
+    gap: 0.5rem;
+  }
+
+  .nav-actions .btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.88rem;
+  }
+
+  .nav-user {
+    display: none;
+  }
+}

@@ -1,0 +1,44 @@
+/* Table-action buttons and other compact buttons */
+.btn-sm {
+  min-height: 36px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* A long mobile menu (signed-in state) must scroll instead of being cut off */
+@media (max-width: 960px) {
+  .nav-menu {
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+  }
+}
+
+/* Text selection that matches the theme */
+::selection {
+  background: rgba(201, 169, 106, 0.35);
+  color: #ffffff;
+}
+
+/* High-contrast / forced-colours mode: keep controls visible */
+@media (forced-colors: active) {
+  .btn,
+  .chip,
+  .input,
+  .card {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Printing: hide navigation and use plain colours */
+@media print {
+  .navbar,
+  .footer,
+  .skip-link {
+    display: none;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+}
